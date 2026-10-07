@@ -59,9 +59,9 @@ function build() {
   S.cards.forEach((c, id) => {
     const cat = S.cats[c.cat], el = document.createElement('div');
     el.className = 'c' + (c.item < 0 ? ' cat' : '');
-    if (c.item < 0) el.innerHTML = `<div class="b"></div><div class="f"><div class="strip">${esc(cat.n)}</div><div class="big">${esc(cat.i)}</div><div class="cnt"></div></div>`;
-    else { const [e, w] = cat.items[c.item]; el.innerHTML = `<div class="b"></div><div class="f"><div class="strip">${esc(e)} ${esc(w)}</div>`
-      + (e ? `<div class="big">${esc(e)}</div><div class="word">${esc(w)}</div>` : `<div class="big txt">${esc(w)}</div>`) + '</div>'; }
+    if (c.item < 0) el.innerHTML = `<div class="b"></div><div class="f"><div class="in"><div class="strip">${esc(cat.n)}</div><div class="big">${esc(cat.i)}</div><div class="cnt"></div></div></div>`;
+    else { const [e, w] = cat.items[c.item]; el.innerHTML = `<div class="b"></div><div class="f"><div class="in"><div class="strip">${esc(e)} ${esc(w)}</div>`
+      + (e ? `<div class="big">${esc(e)}</div><div class="word">${esc(w)}</div>` : `<div class="big txt">${esc(w)}</div>`) + '</div></div>'; }
     el.addEventListener('click', () => tap(id));
     table.appendChild(el); els.set(id, el);
   });
@@ -72,7 +72,7 @@ function layout() {
   const G = Math.max(4, S.cols.length, S.slots.length), W = Math.min(innerWidth, 560) - 20, gap = Math.max(5, Math.round(W * 0.016));   // G — сетка: на ранних уровнях карты крупнее
   cw = Math.floor(Math.min((W - (G - 1) * gap) / G, 110)); ch = Math.round(cw * 1.4);
   const x0 = (innerWidth - (G * cw + (G - 1) * gap)) / 2, top = $('bar').getBoundingClientRect().bottom + 8;
-  geo = { G, X: k => x0 + k * (cw + gap), y1: top, y2: top + ch + 12, y3: top + 2 * ch + 30 };
+  geo = { G, X: k => x0 + k * (cw + gap), y1: top, y2: top + ch + 12, y3: top + 2 * ch + 34 };
   table.style.setProperty('--w', cw + 'px'); table.style.setProperty('--h', ch + 'px');
   for (const el of [...els.values(), ...phSlots, ...phCols, phStock]) { el.style.width = cw + 'px'; el.style.height = ch + 'px'; }
   render();
@@ -105,8 +105,8 @@ function render(fly = []) {
   phSlots.forEach((p, i) => { p.style.left = sx(i) + 'px'; p.style.top = geo.y2 + 'px'; });
   phCols.forEach((p, i) => { p.style.left = cx(i) + 'px'; p.style.top = geo.y3 + 'px'; });
   Object.assign(phStock.style, { left: geo.X(G - 1) + 'px', top: geo.y1 + 'px' }); phStock.textContent = S.stock.length ? '' : S.waste.length ? '↻' : '';
-  Object.assign(stockN.style, { left: geo.X(G - 1) + cw / 2 + 'px', top: geo.y1 + ch - 12 + 'px' }); stockN.textContent = S.stock.length || ''; stockN.hidden = !S.stock.length;   // сколько осталось в колоде
-  $('lvl').innerHTML = `Уровень ${S.L + 1}<small>Разложено ${S.done} из ${S.cats.length}</small>`;
+  Object.assign(stockN.style, { left: geo.X(G - 1) + cw / 2 + 'px', top: geo.y1 + ch - 14 + 'px' }); stockN.textContent = S.stock.length || ''; stockN.hidden = !S.stock.length;   // сколько осталось в колоде
+  $('lvl').innerHTML = `Уровень <b>${S.L + 1}</b><small>Разложено ${S.done} из ${S.cats.length}</small>`;
   $('undo').classList.toggle('off', !hist.length);
 }
 
