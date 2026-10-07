@@ -43,6 +43,8 @@ body.day #tableBg{filter:blur(28px) brightness(1.9) saturate(.35);opacity:.35}
 #table{position:fixed;inset:0}
 /* карты */
 .c{position:absolute;border-radius:11px;transition:left .28s ease,top .28s ease,opacity .3s,transform .3s;will-change:left,top;cursor:pointer}
+.c{touch-action:none}
+.c.drag{cursor:grabbing;filter:drop-shadow(0 14px 18px rgba(0,0,0,.55))}
 .c .f,.c .b{position:absolute;inset:0;border-radius:inherit;backface-visibility:hidden}
 .c{--cut:calc(var(--w) * .13)}
 .c .b{background:radial-gradient(circle at 50% 50%,rgba(150,255,205,.4) 0 17%,transparent 18%),repeating-linear-gradient(135deg,#1f8f63 0 9px,#26a674 9px 18px);border:2px solid #6af5b4;border-radius:12px;box-shadow:0 0 12px var(--glow),0 4px 10px var(--shadow)}

@@ -110,7 +110,7 @@ function build() {
     if (c.item < 0) el.innerHTML = `<div class="b"></div><div class="f"><div class="in"><div class="strip">${esc(cat.n)}</div><div class="big">${esc(cat.i)}</div><div class="cnt"></div></div></div>`;
     else { const [e, w] = cat.items[c.item]; el.innerHTML = `<div class="b"></div><div class="f"><div class="in"><div class="strip">${esc(e)} ${esc(w)}</div>`
       + (e ? `<div class="big">${esc(e)}</div><div class="word">${esc(w)}</div>` : `<div class="big txt">${esc(w)}</div>`) + '</div></div>'; }
-    el.addEventListener('click', () => tap(id));
+    el.dataset.id = id;
     table.appendChild(el); els.set(id, el);
   });
   table.classList.add('still'); layout(); void table.offsetWidth; table.classList.remove('still');   // первая отрисовка — без полёта карт из угла
@@ -165,6 +165,49 @@ function where(id) {
   for (let ci = 0; ci < S.cols.length; ci++) { const col = S.cols[ci], i = col.findIndex(x => x.id === id); if (i >= 0) return i >= col.length - TL.run(S, ci) ? ci : null; }
   return null;
 }
+// ─── перетаскивание пальцем: взяла карту (или всю верхнюю стопку) — отпустила над ячейкой или столбцом; без сдвига — обычное нажатие ───
+let drag = null;
+const slotX = i => geo.X(i + (geo.G - S.slots.length) / 2), colX = i => geo.X(i + (geo.G - S.cols.length) / 2);
+table.addEventListener('pointerdown', e => {
+  const el = e.target.closest('.c'); if (!el || busy || drag) return;
+  drag = { id: +el.dataset.id, x0: e.clientX, y0: e.clientY, pid: e.pointerId, moved: false };
+});
+addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < 8) return;
+    const w = where(drag.id); if (w === null || w === 'stock') { drag = null; return; }
+    drag.from = w; drag.ids = w === 'w' ? [drag.id] : S.cols[w].slice(-TL.run(S, w)).map(x => x.id); drag.moved = true;
+    drag.ids.forEach((id, k) => { const el = els.get(id); el.classList.remove('hint'); el.classList.add('drag'); el.style.transition = 'none'; el.style.zIndex = 800 + k; });
+  }
+  drag.ids.forEach(id => { els.get(id).style.transform = `translate(${dx}px,${dy}px) scale(1.04)`; });
+});
+function dropMove(d, x, y) {                                                        // куда отпустила: ближайшая ячейка или столбец под центром карты
+  let best = null, bd = 1e9;
+  const hit = (to, tx, ty, h) => { const dist = Math.hypot(x - tx - cw / 2, (y - ty - ch / 2) * 0.6); if (Math.abs(x - tx - cw / 2) < cw * 0.8 && y > ty - ch * 0.6 && y < ty + h + ch * 0.6 && dist < bd) { bd = dist; best = to; } };
+  S.slots.forEach((_, i) => hit('s' + i, slotX(i), geo.y2, ch));
+  S.cols.forEach((col, i) => hit(i, colX(i), geo.y3, Math.max(ch, innerHeight - geo.y3)));
+  if (best === null || best === d.from) return null;
+  const id = d.ids[0], c = TL.catOf(S, id);
+  if (typeof best === 'string') {                                                   // ячейка: пустая — для категории, своя — для её предметов
+    const sl = S.slots[+best.slice(1)];
+    return (TL.isCat(S, id) ? !sl : sl && sl.cat === c && !d.ids.some(x => TL.isCat(S, x))) ? { from: d.from, to: best, ids: d.ids } : null;
+  }
+  return TL.moves(S).find(m => m.from === d.from && m.to === best) || null;
+}
+function dropEnd(e, cancel) {
+  const d = drag; if (!d || e.pointerId !== d.pid) return; drag = null;
+  if (!d.moved) { if (!cancel) tap(d.id); return; }
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0, el0 = els.get(d.ids[0]);
+  const m = cancel ? null : dropMove(d, parseFloat(el0.style.left) + dx + cw / 2, parseFloat(el0.style.top) + dy + ch / 2);
+  for (const id of d.ids) { const el = els.get(id);                                  // карта остаётся там, где её отпустили, и оттуда плывёт на место
+    el.style.left = parseFloat(el.style.left) + dx + 'px'; el.style.top = parseFloat(el.style.top) + dy + 'px';
+    el.style.transform = ''; el.classList.remove('drag'); void el.offsetWidth; el.style.transition = ''; }
+  if (m) act(m); else { render(d.ids); if (!cancel) bell(220, 0, 0.25, 0.03); }
+}
+addEventListener('pointerup', e => dropEnd(e, false));
+addEventListener('pointercancel', e => dropEnd(e, true));
 function nope(id) { const el = els.get(id); el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); }
 function tap(id) {
   if (busy) return;
