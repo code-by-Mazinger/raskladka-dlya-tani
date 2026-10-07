@@ -37,6 +37,11 @@ for (let L = 0; L < 60; L++) {
 const rate = (a, b) => { let ok = 0, n = 0; for (let L = a; L < b; L++) { const D = TL.deal(L, CATS); for (let k = 0; k < 40; k++, n++) ok += TL.naive(TL.clone(D), TL.rng(777 + k)) ? 1 : 0; } return ok / n; };
 const easy = rate(5, 10), hard = rate(40, 45);
 assert(easy - hard > 0.25, `сложность растёт: 6–10-й ${Math.round(easy * 100)}%, 41–45-й ${Math.round(hard * 100)}%`);
+// быстрая раскладка — маленькая и проходимая; раскладка дня — одна и та же на дату
+const Q = TL.deal(0, CATS, 4242, [], TL.QUICK);
+assert(Q.cards.length === 15 && TL.plan(Q) !== null, 'быстрая: 15 карт, проходима');
+assert.deepStrictEqual(TL.deal(20, CATS, 20261008).cols, TL.deal(20, CATS, 20261008).cols, 'раскладка дня одинакова весь день');
+assert(TD.RARE.length === 30 && new Set(TD.RARE.map(x => x[0])).size === 30, '30 разных редких вещей');
 // свои категории: 3 предмета, обязательно входят в раскладку
 const mine = CATS.concat([{ n: 'Моя', i: '📝', items: [['', 'раз'], ['', 'два'], ['', 'три']] }]);
 const M = TL.deal(15, mine, undefined, [CATS.length]);

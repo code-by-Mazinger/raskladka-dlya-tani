@@ -113,14 +113,21 @@ body.day .ovl{background:rgba(30,45,90,.18)}
 #roomCap .goal{display:block;margin-top:4px;color:var(--accent);font-weight:600}
 #shelf span{cursor:pointer}
 #tip{min-height:20px;font-size:14px;font-weight:600;color:var(--ink);text-align:center}
+#rare{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:3px;width:min(100%,460px);font-size:13px;color:var(--ink2)}
+#rare b{margin-right:4px;color:#ffd36b}
+#rare span{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:18px;border-radius:8px;cursor:pointer;background:rgba(255,211,107,.12);box-shadow:0 0 10px rgba(255,211,107,.25)}
+#rain{position:absolute;left:40%;top:0;width:60%;height:56%;overflow:hidden;pointer-events:none;mix-blend-mode:screen}
+#rain i{position:absolute;top:-30px;width:1.5px;border-radius:1px;background:linear-gradient(transparent,rgba(200,225,255,.9));animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(240px)}}
+.tile.done{opacity:.6}
 #shelf span.no{opacity:.35;font-size:8px;color:var(--ink2)}
 #shelf span.new{animation:pop .7s cubic-bezier(.3,1.6,.6,1);background:rgba(78,230,160,.18)}
 #play{width:min(100%,460px);position:relative}
 #play .chev{position:absolute;right:20px;top:50%;transform:translateY(-50%)}
 #play .chev,.tile .chev{margin-left:auto;opacity:.7;font-weight:400;font-size:22px;line-height:1}
 #play .tri{font-size:15px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(100%,460px);margin-top:12px}
-.tile{display:flex;align-items:center;gap:8px;padding:14px 12px;white-space:nowrap;border-radius:18px;border:1px solid var(--line);background:var(--glass);box-shadow:0 8px 22px var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(100%,460px);margin-top:12px}
+.tile{display:flex;align-items:center;gap:8px;padding:12px 10px 12px 12px;min-width:0;line-height:1.15;min-height:52px;border-radius:18px;border:1px solid var(--line);background:var(--glass);box-shadow:0 8px 22px var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--ink)}
 .tile:active{transform:scale(.97)}
 .tile .ico{font-size:20px;width:24px;text-align:center}
 .link{border:0;background:none;color:var(--accent);font-weight:600;font-size:14px;margin-top:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
@@ -154,12 +161,17 @@ textarea.fld{height:150px;resize:none}
 <div id="home">
   <h1>Уютная <span>раскладка</span></h1>
   <div class="sub">Разложи вещи по категориям — без спешки и без проигрышей</div>
-  <div id="room"><img src="room.jpg" alt="Уютная комната вечером"></div>
+  <div id="room"><img src="room.jpg" alt="Уютная комната вечером"><div id="rain" hidden></div></div>
   <div id="roomCap"></div>
   <div id="shelf"></div>
+  <div id="rare"></div>
   <div id="tip"></div>
   <button class="go" id="play"></button>
   <div class="grid">
+    <button class="tile" id="dailyBtn"></button>
+    <button class="tile" id="quickBtn"><span class="ico">⚡</span>Быстрая<span class="chev">›</span></button>
+    <button class="tile" id="rainBtn"></button>
+    <button class="tile" id="fireBtn"></button>
     <button class="tile" id="mineBtn"><span class="ico">✍️</span>Мои категории<span class="chev">›</span></button>
     <button class="tile" id="breathHome"><span class="ico">🌿</span>Подышать<span class="chev">›</span></button>
     <button class="tile" id="nightBtn"></button>
@@ -171,7 +183,7 @@ textarea.fld{height:150px;resize:none}
 </div>
 
 <div class="ovl" id="win" hidden><div class="card">
-  <h2>Раскладка готова!</h2>
+  <h2 id="winTitle">Раскладка готова!</h2>
   <p id="warm"></p>
   <div id="newWrap"><div class="newthing" id="newThing"></div><p id="newName"></p><p id="lit"></p></div>
   <button class="go" id="next">Дальше</button>

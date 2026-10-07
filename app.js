@@ -18,6 +18,44 @@ function audio() {
     rev.buffer = b; const wet = ac.createGain(); wet.gain.value = 0.35; rev.connect(wet); wet.connect(out);
   }
   if (ac.state === 'suspended') ac.resume();
+  ambient();
+}
+// ─── звуки уюта: дождь (белый шум в полосе 500–7000 Гц + низкий гул) и камин (гул + треск) — без файлов ───
+let amb = null;
+const rainLv = () => +ls('tl_rain') || 0, fireOn = () => ls('tl_fire') === '1';
+function noise(brown) {
+  const len = ac.sampleRate * 3, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0); let last = 0;
+  for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; d[i] = brown ? (last = (last + 0.02 * w) / 1.02) * 3.5 : w; }
+  const src = ac.createBufferSource(); src.buffer = b; src.loop = true; src.start(); return src;
+}
+function ambient() {
+  if (!ac) return;
+  if (!amb) {
+    const g = () => { const x = ac.createGain(); x.gain.value = 0; x.connect(out); return x; };
+    amb = { rain: g(), fire: g() };
+    const hp = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), low = ac.createBiquadFilter(), lowG = ac.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 500; lp.type = 'lowpass'; lp.frequency.value = 7000;
+    noise(false).connect(hp); hp.connect(lp); lp.connect(amb.rain);
+    low.type = 'lowpass'; low.frequency.value = 400; lowG.gain.value = 0.6; noise(true).connect(low); low.connect(lowG); lowG.connect(amb.rain);
+    const fl = ac.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 250; noise(true).connect(fl); fl.connect(amb.fire);
+    setInterval(() => {                                                             // треск поленьев: короткие щелчки шума
+      if (!fireOn() || !soundOn() || Math.random() > 0.4) return;
+      const t0 = ac.currentTime, n = ac.createBufferSource(), len = Math.floor(ac.sampleRate * (0.01 + Math.random() * 0.04)), b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      const bp = ac.createBiquadFilter(), k = ac.createGain(); bp.type = 'bandpass'; bp.frequency.value = 1500 + Math.random() * 3000; k.gain.value = 0.15 + Math.random() * 0.35;
+      n.buffer = b; n.connect(bp); bp.connect(k); k.connect(out); n.start(t0);
+    }, 110);
+  }
+  amb.rain.gain.setTargetAtTime([0, 0.07, 0.16][rainLv()], ac.currentTime, 0.8);
+  amb.fire.gain.setTargetAtTime(fireOn() ? 0.5 : 0, ac.currentTime, 0.8);
+  rainShow();
+}
+function rainShow() {                                                               // капли на окне комнаты
+  const r = $('rain'); if (!r) return;
+  r.hidden = !rainLv();
+  if (r.hidden || r.childElementCount) return;
+  for (let i = 0; i < 70; i++) { const d = document.createElement('i'); Object.assign(d.style, { left: Math.random() * 100 + '%', height: 10 + Math.random() * 16 + 'px',
+    animationDuration: 0.5 + Math.random() * 0.6 + 's', animationDelay: -Math.random() * 2 + 's', opacity: 0.25 + Math.random() * 0.45 }); r.appendChild(d); }
 }
 function bell(f, t = 0, dur = 1, v = 0.1) {
   if (!ac) return; const t0 = ac.currentTime + t, g = ac.createGain();
@@ -37,12 +75,22 @@ let S = null, hist = [], doneSlot = {}, cw = 60, ch = 84, geo = null, busy = fal
 const els = new Map(), table = $('table');
 const mine = () => { try { return JSON.parse(ls('tl_mine') || '[]'); } catch (e) { return []; } };
 const pool = () => TD.CATS.concat(mine());
-const save = () => ls('tl_game', JSON.stringify(S));
+const KEY = { level: 'tl_game', daily: 'tl_dgame', quick: 'tl_qgame' };
+const mode = () => (S && S.mode) || 'level';
+const save = () => ls(KEY[mode()], JSON.stringify(S));
+const today = () => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+const saved = m => { try { return JSON.parse(ls(KEY[m])); } catch (e) { return null; } };
 
-function start(first = []) {
+function start(first = [], m = 'level') {
   S = null;
-  if (!first.length) try { const g = JSON.parse(ls('tl_game')); if (g && g.L === L && !TL.won(g)) S = g; } catch (e) {}
-  if (!S) S = TL.deal(L, pool(), undefined, first);
+  const g = first.length ? null : saved(m);
+  if (g && !TL.won(g) && (m === 'level' ? g.L === L && !g.mode : m === 'daily' ? g.day === today() : true)) S = g;
+  if (!S) {
+    if (m === 'daily') { S = TL.deal(20, TD.CATS, today()); S.day = today(); }               // одна раздача на дату, средней сложности
+    else if (m === 'quick') S = TL.deal(0, TD.CATS, Date.now() % 1e9, [], TL.QUICK);
+    else S = TL.deal(L, pool(), undefined, first);
+    if (m !== 'level') S.mode = m;
+  }
   hist = []; doneSlot = {}; build(); save();
   $('home').hidden = true;
 }
@@ -106,7 +154,7 @@ function render(fly = []) {
   phCols.forEach((p, i) => { p.style.left = cx(i) + 'px'; p.style.top = geo.y3 + 'px'; });
   Object.assign(phStock.style, { left: geo.X(G - 1) + 'px', top: geo.y1 + 'px' }); phStock.textContent = S.stock.length ? '' : S.waste.length ? '↻' : '';
   Object.assign(stockN.style, { left: geo.X(G - 1) + cw / 2 + 'px', top: geo.y1 + ch - 14 + 'px' }); stockN.textContent = S.stock.length || ''; stockN.hidden = !S.stock.length;   // сколько осталось в колоде
-  $('lvl').innerHTML = `Уровень <b>${S.L + 1}</b><small>Разложено ${S.done} из ${S.cats.length}</small>`;
+  $('lvl').innerHTML = `${mode() === 'daily' ? 'Раскладка <b>дня</b>' : mode() === 'quick' ? 'Быстрая <b>раскладка</b>' : `Уровень <b>${S.L + 1}</b>`}<small>Разложено ${S.done} из ${S.cats.length}</small>`;
   $('undo').classList.toggle('off', !hist.length);
 }
 
@@ -162,21 +210,33 @@ $('hintBtn').onclick = () => {
 };
 $('mix').onclick = () => { hist.push(TL.clone(S)); TL.reshuffle(S); render(); save(); $('stuck').hidden = true; if (TL.stuck(S)) setTimeout(() => { $('stuck').hidden = false; }, 600); };
 $('think').onclick = () => { $('stuck').hidden = true; };
-$('again').onclick = () => { ls('tl_game', null); $('stuck').hidden = true; start(); };
+$('again').onclick = () => { const m = mode(); ls(KEY[m], null); $('stuck').hidden = true; start([], m); };
 
-// ─── победа: тёплая фраза и новая вещь в доме ───
+// ─── победа: тёплая фраза; уровень — вещь в дом и свет, раскладка дня — редкая вещь, быстрая — просто отдых ───
+let rare = Math.min(TD.RARE.length, +ls('tl_rare') || 0);
 function win() {
   fanfare();
-  L++; ls('tl_level', L); ls('tl_game', null);
-  const got = room < ROOMN ? TD.ROOM[room] : null;
-  if (got) { room++; ls('tl_room', room); }
+  const m = mode(); ls(KEY[m], null);
+  let got = null, name = '', lit = '';
+  if (m === 'level') {
+    L++; ls('tl_level', L);
+    got = room < ROOMN ? TD.ROOM[room] : null;
+    if (got) { room++; ls('tl_room', room); name = `В доме появилось: ${got[1]}`; const l = TD.LIGHTS.find(l => l[0] === room); lit = l ? `✨ ${l[1]}` : 'В комнате стало чуть светлее'; }
+  } else if (m === 'daily') {
+    ls('tl_daily', today());
+    got = rare < TD.RARE.length ? TD.RARE[rare] : null;
+    if (got) { rare++; ls('tl_rare', rare); name = `Редкая вещь: ${got[1]}`; lit = 'Новая раскладка дня — завтра'; }
+  }
+  $('winTitle').textContent = m === 'daily' ? 'Раскладка дня готова!' : 'Раскладка готова!';
   $('warm').textContent = pick(TD.WARM);
   $('newWrap').hidden = !got;
-  if (got) { $('newThing').textContent = got[0]; $('newName').textContent = `В доме появилось: ${got[1]}`; }
-  const lit = TD.LIGHTS.find(l => l[0] === room); $('lit').textContent = got ? (lit ? `✨ ${lit[1]}` : 'В комнате стало чуть светлее') : '';
+  if (got) { $('newThing').textContent = got[0]; $('newName').textContent = name; $('lit').textContent = lit; }
+  $('next').textContent = m === 'level' ? 'Дальше' : m === 'quick' ? 'Ещё одну быструю' : 'Домой';
+  $('winHome').hidden = m === 'daily';
+  $('winHome').textContent = m === 'level' ? 'Посмотреть дом' : 'Домой';
   $('win').hidden = false; busy = false;
 }
-$('next').onclick = () => { $('win').hidden = true; start(); };
+$('next').onclick = () => { $('win').hidden = true; const m = mode(); if (m === 'daily') home(true); else start([], m); };
 $('winHome').onclick = () => { $('win').hidden = true; home(true); };
 
 // ─── дом: комната оживает — светлеет с каждой раскладкой, на порогах загорается свет; вещи — коллекция под картинкой ───
@@ -193,6 +253,10 @@ function home(fresh = false) {
   $('roomCap').innerHTML = room >= ROOMN ? 'Дом обставлен полностью — все огни горят 🏡'
     : `🏠 Вещей в доме: <b>${room} из ${ROOMN}</b>. Пройди раскладку — получишь вещь, а в комнате станет светлее.`
       + `<span class="goal">✨ Ещё ${n} ${plural(n, 'раскладка', 'раскладки', 'раскладок')} — и ${next ? next[6] : 'дом будет обставлен полностью'}</span>`;
+  $('rare').innerHTML = rare ? '<b>Редкие:</b> ' + TD.RARE.slice(0, rare).map(([e], i) => `<span data-r="${i}">${e}</span>`).join('') : '';
+  const done = +ls('tl_daily') === today();
+  $('dailyBtn').innerHTML = tile('☀️', done ? 'Раскладка дня ✓' : 'Раскладка дня');
+  $('dailyBtn').classList.toggle('done', done);
   $('tip').textContent = '';
   let g = null; try { g = JSON.parse(ls('tl_game')); } catch (e) {}
   $('play').innerHTML = `<span class="tri">▶</span>${g && g.L === L && g.moves ? 'Продолжить' : 'Играть'} · уровень ${L + 1}<span class="chev">›</span>`;
@@ -200,9 +264,12 @@ function home(fresh = false) {
 }
 const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many;
 let tipT = 0;
+const tipShow = t => { $('tip').textContent = t; clearTimeout(tipT); tipT = setTimeout(() => { $('tip').textContent = ''; }, 2500); };
 $('shelf').onclick = e => { const i = e.target.dataset && e.target.dataset.i; if (i === undefined) return;                // значок вещи — её название
-  const [em, nm] = TD.ROOM[+i]; $('tip').textContent = +i < room ? `${em} ${nm}` : 'Эта вещь ещё впереди — пройди раскладку';
-  clearTimeout(tipT); tipT = setTimeout(() => { $('tip').textContent = ''; }, 2500); };
+  const [em, nm] = TD.ROOM[+i]; tipShow(+i < room ? `${em} ${nm}` : 'Эта вещь ещё впереди — пройди раскладку'); };
+$('rare').onclick = e => { const i = e.target.dataset && e.target.dataset.r; if (i !== undefined) tipShow(`${TD.RARE[+i][0]} ${TD.RARE[+i][1]} — редкая вещь`); };
+$('dailyBtn').onclick = () => { if (+ls('tl_daily') === today()) { tipShow('Раскладка дня уже собрана — новая завтра ☀️'); return; } audio(); start([], 'daily'); };
+$('quickBtn').onclick = () => { audio(); start([], 'quick'); };
 $('play').onclick = () => { audio(); start(); bell(523.25, 0, 1, 0.07); };
 $('homeBtn').onclick = () => home();
 
@@ -210,7 +277,11 @@ $('homeBtn').onclick = () => home();
 function night() { return ls('tl_night') !== '0'; }                               // тёмная тема — основная, «День» — светлый вариант
 const tile = (ico, t) => `<span class="ico">${ico}</span>${t}<span class="chev">›</span>`;
 function paint() { const n = night(); document.body.classList.toggle('day', !n); $('nightBtn').innerHTML = n ? tile('☀️', 'День') : tile('🌙', 'Ночь');
-  document.querySelector('meta[name=theme-color]').content = n ? '#0b1122' : '#eef1f8'; $('sndBtn').innerHTML = soundOn() ? tile('🔈', 'Тихо') : tile('🔇', 'Без звука'); }
+  document.querySelector('meta[name=theme-color]').content = n ? '#0b1122' : '#eef1f8'; $('sndBtn').innerHTML = soundOn() ? tile('🔈', 'Тихо') : tile('🔇', 'Без звука');
+  $('rainBtn').innerHTML = tile('🌧️', ['Дождь', 'Дождик', 'Ливень'][rainLv()]); $('fireBtn').innerHTML = tile('🔥', fireOn() ? 'Камин ✓' : 'Камин'); }
+const loud = () => { if (!soundOn()) { ls('tl_sound', '1'); if (out) out.gain.value = 0.45; } };          // включила дождь или камин — звук нужен
+$('rainBtn').onclick = () => { ls('tl_rain', (rainLv() + 1) % 3); if (rainLv()) loud(); audio(); ambient(); paint(); };
+$('fireBtn').onclick = () => { ls('tl_fire', fireOn() ? '0' : '1'); if (fireOn()) loud(); audio(); ambient(); paint(); };
 $('nightBtn').onclick = () => { ls('tl_night', night() ? '0' : '1'); paint(); };
 $('sndBtn').onclick = () => { audio(); ls('tl_sound', soundOn() ? '0' : '1'); if (out) out.gain.value = soundOn() ? 0.45 : 0; paint(); };
 
@@ -275,7 +346,7 @@ $('moveNo').onclick = () => { $('moveCard').hidden = true; };
 $('moveGo').onclick = () => { const n = Math.floor(+$('moveIn').value); if (!(n >= 1 && n <= 999)) { $('moveIn').focus(); return; }
   L = n - 1; room = Math.min(ROOMN, L); ls('tl_level', L); ls('tl_room', room); $('moveCard').hidden = true; $('moveBtn').hidden = true; home(); };
 
-paint(); home();
+paint(); home(); rainShow();
 if (/[?&]debug/.test(location.search)) window.TT = { S: () => S, tap, act, best: () => TL.best(S) };      // для проверок: ?debug
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const had = !!navigator.serviceWorker.controller;

@@ -7,6 +7,7 @@
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
 const shuffle = (a, r) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
+const QUICK = { sizes: [4, 4, 4], cols: [1, 2, 3, 4], slots: 3 };                   // быстрая раскладка — минуты на 3
 // Уровни. 1–5 — лёгкие. С 6-го по 45-й сложность растёт: категорий 4 → 8 (по 4, 6, 8 карточек), ячеек меньше, чем категорий,
 // карты-категории чаще лежат закрытыми (hide), а раздача подбирается так, чтобы «наугад» выигрывалось всё реже (target: 85% → 45%).
 function spec(L) {
@@ -20,9 +21,9 @@ function spec(L) {
 }
 
 // cats — [{ n, i, items: [[эмодзи, слово]] }]: из них уровень берёт нужное число категорий и предметов
-// first — номера категорий, которые обязательно войдут (свои категории Тани)
-function deal(L, cats, seed = L * 7919 + 17, first = []) {
-  const sp = spec(L); let pick1 = null, gap = 9;
+// first — номера категорий, которые обязательно войдут (свои категории Тани); sp — свои правила раздачи (быстрая раскладка)
+function deal(L, cats, seed = L * 7919 + 17, first = [], sp = spec(L)) {
+  let pick1 = null, gap = 9;
   for (let t = 0; t < 40; t++) {
     const r = rng(seed + t * 101), pick = [...first, ...shuffle(cats.map((_, i) => i).filter(i => !first.includes(i)), r)].slice(0, sp.sizes.length);
     const lc = pick.map((ci, j) => { const c = cats[ci], k = Math.min(sp.sizes[j], c.items.length); return { n: c.n, i: c.i, items: shuffle(c.items.slice(), r).slice(0, k), k }; });
@@ -155,5 +156,5 @@ function solve(S, r, max = 4000) {                                              
   }
   return won(S);
 }
-globalThis.TL = { rng, spec, deal, naive, naiveRate, plan, clone, won, run, moves, apply, draw, best, stuck, reshuffle, solve, isCat, catOf };
+globalThis.TL = { rng, spec, QUICK, deal, naive, naiveRate, plan, clone, won, run, moves, apply, draw, best, stuck, reshuffle, solve, isCat, catOf };
 })();
