@@ -1,4 +1,4 @@
-// node selfcheck.js — правила, раздачи 1–60 проходимы ботом, перемешивание не теряет карт, данные без повторов
+// node selfcheck.js — правила, раздачи 1–60 проходимы ботом, сложность растёт, перемешивание не теряет карт, данные без повторов
 'use strict';
 const assert = require('assert');
 require('./data.js'); require('./logic.js');
@@ -29,10 +29,14 @@ for (let L = 0; L < 60; L++) {
   const D = TL.deal(L, CATS), n = D.cats.reduce((s, c) => s + c.k + 1, 0);
   assert.strictEqual(D.cards.length, n);
   assert.strictEqual(D.cols.flat().length + D.stock.length, n, 'все карты разданы');
-  assert(TL.solve(TL.clone(D), TL.rng(L + 3)), 'уровень ' + (L + 1) + ' проходим');
+  assert(TL.plan(D) !== null, 'уровень ' + (L + 1) + ': подсказка с первого хода ведёт к победе');
   const ids = () => [...D.stock, ...D.waste, ...D.cols.flat().map(x => x.id)].sort((a, b) => a - b).join();
   const before = ids(); TL.reshuffle(D, TL.rng(9)); assert.strictEqual(ids(), before, 'перемешивание не теряет карт');
 }
+// сложность растёт: наугад на 41–45-м выигрывается заметно реже, чем на 6–10-м (раздачи подбираются по этой доле)
+const rate = (a, b) => { let ok = 0, n = 0; for (let L = a; L < b; L++) { const D = TL.deal(L, CATS); for (let k = 0; k < 40; k++, n++) ok += TL.naive(TL.clone(D), TL.rng(777 + k)) ? 1 : 0; } return ok / n; };
+const easy = rate(5, 10), hard = rate(40, 45);
+assert(easy - hard > 0.25, `сложность растёт: 6–10-й ${Math.round(easy * 100)}%, 41–45-й ${Math.round(hard * 100)}%`);
 // свои категории: 3 предмета, обязательно входят в раскладку
 const mine = CATS.concat([{ n: 'Моя', i: '📝', items: [['', 'раз'], ['', 'два'], ['', 'три']] }]);
 const M = TL.deal(15, mine, undefined, [CATS.length]);

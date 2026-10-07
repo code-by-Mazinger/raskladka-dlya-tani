@@ -28,7 +28,7 @@ body{background:#0b1122;background:var(--bg)}
 button{font:inherit;color:inherit}
 header{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 6px;display:flex;align-items:center;gap:8px;max-width:560px;margin:0 auto;z-index:3}
 .hud{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:5px 26px 5px 5px;border-radius:16px;border:1.5px solid var(--neon);background:var(--hud);box-shadow:0 0 14px rgba(60,130,255,.22),inset 0 0 14px rgba(60,130,255,.12);position:relative}
-.hud::after{content:"";position:absolute;right:8px;top:7px;width:16px;height:10px;background:repeating-linear-gradient(120deg,transparent 0 3px,var(--neon) 3px 5px);opacity:.8}
+.hud::after{content:"";position:absolute;right:8px;bottom:7px;width:16px;height:10px;background:repeating-linear-gradient(120deg,transparent 0 3px,var(--neon) 3px 5px);opacity:.8}
 #lvl{flex:1;min-width:0;font-weight:800;font-size:18px;white-space:nowrap}
 #lvl b{color:var(--accent)}
 #lvl small{display:block;font-weight:500;font-size:13px;color:var(--ink2)}
@@ -180,8 +180,9 @@ textarea.fld{height:150px;resize:none}
 
 <div class="ovl" id="stuck" hidden><div class="card">
   <h2>Карты упрямятся</h2>
-  <p>Подходящих ходов не осталось. Перемешаем закрытые карты — раскладка продолжится с того же места.</p>
+  <p>Похоже, отсюда раскладку не закончить. Перемешаем карты на столе — собранное в ячейках останется.</p>
   <button class="go" id="mix">Перемешать</button>
+  <button class="go soft" id="think">Ещё подумаю</button>
   <button class="go soft" id="again">Начать раскладку заново</button>
 </div></div>
 

@@ -154,13 +154,14 @@ function burst(s) {
 $('undo').onclick = () => { if (busy || !hist.length) return; S = hist.pop(); render(); save(); };
 $('hintBtn').onclick = () => {
   if (busy) return;
-  const m = TL.best(S);
-  if (!m) { $('stuck').hidden = false; return; }
+  const m = TL.plan(S);                                                             // ход, после которого бот доводит раскладку до конца
+  if (!m) { $('stuck').hidden = false; return; }                                     // пути нет — честно предлагаем перемешать
   const ids = m === 'draw' ? (S.stock.length ? [S.stock[S.stock.length - 1]] : []) : m.ids;
   if (!ids.length) { phStock.classList.remove('hint'); void phStock.offsetWidth; phStock.classList.add('hint'); return; }
   for (const id of ids) { const el = els.get(id); el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint'); }
 };
 $('mix').onclick = () => { hist.push(TL.clone(S)); TL.reshuffle(S); render(); save(); $('stuck').hidden = true; if (TL.stuck(S)) setTimeout(() => { $('stuck').hidden = false; }, 600); };
+$('think').onclick = () => { $('stuck').hidden = true; };
 $('again').onclick = () => { ls('tl_game', null); $('stuck').hidden = true; start(); };
 
 // ─── победа: тёплая фраза и новая вещь в доме ───
