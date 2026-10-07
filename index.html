@@ -93,6 +93,9 @@ body.day .ovl{background:rgba(30,45,90,.18)}
 #roomCap b{color:var(--accent)}
 #shelf{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;width:min(100%,460px);margin:6px 0 2px}
 #shelf span{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:7px}
+#roomCap .goal{display:block;margin-top:4px;color:var(--accent);font-weight:600}
+#shelf span{cursor:pointer}
+#tip{min-height:20px;font-size:14px;font-weight:600;color:var(--ink);text-align:center}
 #shelf span.no{opacity:.35;font-size:8px;color:var(--ink2)}
 #shelf span.new{animation:pop .7s cubic-bezier(.3,1.6,.6,1);background:rgba(78,230,160,.18)}
 #play{width:min(100%,460px);position:relative}
@@ -138,6 +141,7 @@ textarea.fld{height:150px;resize:none}
   <div id="room"><img src="room.jpg" alt="Уютная комната вечером"></div>
   <div id="roomCap"></div>
   <div id="shelf"></div>
+  <div id="tip"></div>
   <button class="go" id="play"></button>
   <div class="grid">
     <button class="tile" id="mineBtn"><span class="ico">✍️</span>Мои категории<span class="chev">›</span></button>

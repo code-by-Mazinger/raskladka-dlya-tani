@@ -187,12 +187,21 @@ function home(fresh = false) {
     d.className = 'lt' + (room >= need ? ' on' : '') + (fresh && room === need ? ' new' : '');
     Object.assign(d.style, { left: x + '%', top: y + '%', width: px + 'px', height: px + 'px', background: `radial-gradient(circle, rgba(${rgb},.55) 0%, rgba(${rgb},.18) 35%, rgba(${rgb},0) 70%)` });
     r.appendChild(d); }
-  $('shelf').innerHTML = TD.ROOM.map(([e, n], i) => i < room ? `<span title="${n}"${fresh && i === room - 1 ? ' class="new"' : ''}>${e}</span>` : '<span class="no">●</span>').join('');
-  $('roomCap').innerHTML = room >= ROOMN ? 'Дом обставлен полностью — все огни горят 🏡' : `🏠 Вещей в доме: <b>${room} из ${ROOMN}</b>. Каждая раскладка добавляет новую.`;
+  $('shelf').innerHTML = TD.ROOM.map(([e], i) => i < room ? `<span data-i="${i}"${fresh && i === room - 1 ? ' class="new"' : ''}>${e}</span>` : `<span class="no" data-i="${i}">●</span>`).join('');
+  const next = TD.LIGHTS.find(l => l[0] > room), n = next ? next[0] - room : ROOMN - room;
+  $('roomCap').innerHTML = room >= ROOMN ? 'Дом обставлен полностью — все огни горят 🏡'
+    : `🏠 Вещей в доме: <b>${room} из ${ROOMN}</b>. Пройди раскладку — получишь вещь, а в комнате станет светлее.`
+      + `<span class="goal">✨ Ещё ${n} ${plural(n, 'раскладка', 'раскладки', 'раскладок')} — и ${next ? next[6] : 'дом будет обставлен полностью'}</span>`;
+  $('tip').textContent = '';
   let g = null; try { g = JSON.parse(ls('tl_game')); } catch (e) {}
   $('play').innerHTML = `<span class="tri">▶</span>${g && g.L === L && g.moves ? 'Продолжить' : 'Играть'} · уровень ${L + 1}<span class="chev">›</span>`;
   $('home').hidden = false;
 }
+const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many;
+let tipT = 0;
+$('shelf').onclick = e => { const i = e.target.dataset && e.target.dataset.i; if (i === undefined) return;                // значок вещи — её название
+  const [em, nm] = TD.ROOM[+i]; $('tip').textContent = +i < room ? `${em} ${nm}` : 'Эта вещь ещё впереди — пройди раскладку';
+  clearTimeout(tipT); tipT = setTimeout(() => { $('tip').textContent = ''; }, 2500); };
 $('play').onclick = () => { audio(); start(); bell(523.25, 0, 1, 0.07); };
 $('homeBtn').onclick = () => home();
 
