@@ -27,12 +27,12 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,"SF Pro
 body{background:#0b1122;background:var(--bg)}
 button{font:inherit;color:inherit}
 header{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 6px;display:flex;align-items:center;gap:8px;max-width:560px;margin:0 auto;z-index:3}
-.hud{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:5px 26px 5px 5px;border-radius:16px;border:1.5px solid var(--neon);background:var(--hud);box-shadow:0 0 14px rgba(60,130,255,.22),inset 0 0 14px rgba(60,130,255,.12);position:relative}
-.hud::after{content:"";position:absolute;right:8px;bottom:7px;width:16px;height:10px;background:repeating-linear-gradient(120deg,transparent 0 3px,var(--neon) 3px 5px);opacity:.8}
-#lvl{flex:1;min-width:0;font-weight:800;font-size:18px;white-space:nowrap}
+.hud{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:16px;border:1.5px solid var(--neon);background:var(--hud);box-shadow:0 0 14px rgba(60,130,255,.22),inset 0 0 14px rgba(60,130,255,.12);position:relative}
+#lvl{flex:1;min-width:0;font-weight:800;font-size:clamp(15px,4.6vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lvl small{overflow:hidden;text-overflow:ellipsis}
 #lvl b{color:var(--accent)}
-#lvl small{display:block;font-weight:500;font-size:13px;color:var(--ink2)}
-.ib{width:46px;height:46px;border-radius:13px;border:1.5px solid var(--neon);background:var(--hud);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(60,130,255,.25),inset 0 0 12px rgba(60,130,255,.15);cursor:pointer;flex:none;padding:0}
+#lvl small{display:block;font-weight:500;font-size:clamp(11px,3.4vw,13px);color:var(--ink2)}
+.ib{width:clamp(40px,12vw,46px);height:clamp(40px,12vw,46px);border-radius:13px;border:1.5px solid var(--neon);background:var(--hud);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(60,130,255,.25),inset 0 0 12px rgba(60,130,255,.15);cursor:pointer;flex:none;padding:0}
 .ib svg{width:25px;height:25px;fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px var(--glow))}
 .ib svg .fl{fill:var(--accent);stroke:none}
 .ib:active{transform:scale(.94)}

@@ -154,7 +154,7 @@ function render(fly = []) {
   phCols.forEach((p, i) => { p.style.left = cx(i) + 'px'; p.style.top = geo.y3 + 'px'; });
   Object.assign(phStock.style, { left: geo.X(G - 1) + 'px', top: geo.y1 + 'px' }); phStock.textContent = S.stock.length ? '' : S.waste.length ? '↻' : '';
   Object.assign(stockN.style, { left: geo.X(G - 1) + cw / 2 + 'px', top: geo.y1 + ch - 14 + 'px' }); stockN.textContent = S.stock.length || ''; stockN.hidden = !S.stock.length;   // сколько осталось в колоде
-  $('lvl').innerHTML = `${mode() === 'daily' ? 'Раскладка <b>дня</b>' : mode() === 'quick' ? 'Быстрая <b>раскладка</b>' : `Уровень <b>${S.L + 1}</b>`}<small>Разложено ${S.done} из ${S.cats.length}</small>`;
+  $('lvl').innerHTML = `${mode() === 'daily' ? 'Сегодня <b>☀️</b>' : mode() === 'quick' ? 'Быстрая <b>⚡</b>' : `Уровень <b>${S.L + 1}</b>`}<small>Разложено ${S.done} из ${S.cats.length}</small>`;
   $('undo').classList.toggle('off', !hist.length);
 }
 
