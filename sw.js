@@ -1,6 +1,6 @@
 // Офлайн: всё, что нужно игре, — в кэше. Новая версия — поменять VER, старый кэш удалится.
-const VER = 'tl-v1';
-const FILES = ['./', 'index.html', 'data.js', 'logic.js', 'app.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const VER = 'tl-v2';
+const FILES = ['./', 'index.html', 'data.js', 'logic.js', 'app.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'room.jpg'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VER).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VER).map(k => caches.delete(k))))); self.clients.claim(); });
 // Сначала из сети, мимо HTTP-кэша браузера (иначе обновление доходит с опозданием), без сети — из кэша.

@@ -172,30 +172,35 @@ function win() {
   $('warm').textContent = pick(TD.WARM);
   $('newWrap').hidden = !got;
   if (got) { $('newThing').textContent = got[0]; $('newName').textContent = `В доме появилось: ${got[1]}`; }
+  const lit = TD.LIGHTS.find(l => l[0] === room); $('lit').textContent = got ? (lit ? `✨ ${lit[1]}` : 'В комнате стало чуть светлее') : '';
   $('win').hidden = false; busy = false;
 }
 $('next').onclick = () => { $('win').hidden = true; start(); };
 $('winHome').onclick = () => { $('win').hidden = true; home(true); };
 
-// ─── дом: стартовый экран ───
+// ─── дом: комната оживает — светлеет с каждой раскладкой, на порогах загорается свет; вещи — коллекция под картинкой ───
 function home(fresh = false) {
-  const r = $('room'); r.querySelectorAll('.it').forEach(e => e.remove());
-  const w = r.clientWidth || Math.min(innerWidth - 32, 460);
-  TD.ROOM.slice(0, room).forEach(([e, n, x, y, s], i) => { const d = document.createElement('div');
-    d.className = 'it' + (fresh && i === room - 1 ? ' new' : ''); d.textContent = e; d.title = n;
-    Object.assign(d.style, { left: x + '%', top: y + '%', fontSize: Math.round(s * w * 1.1) + 'px' }); r.appendChild(d); });
-  $('roomCap').textContent = room >= ROOMN ? 'Дом обставлен полностью! Можно просто раскладывать 🏡' : room ? `Вещей в доме: ${room} из ${ROOMN}. Каждая раскладка добавляет новую.` : 'Пока тут пусто. Каждая раскладка добавит в дом новую вещь.';
+  const r = $('room'), w = r.clientWidth || Math.min(innerWidth - 32, 460), t = room / ROOMN;
+  r.querySelector('img').style.filter = `brightness(${(0.38 + 0.62 * t).toFixed(2)}) saturate(${(0.45 + 0.55 * t).toFixed(2)})`;
+  r.querySelectorAll('.lt').forEach(e => e.remove());
+  for (const [need, , x, y, s, rgb] of TD.LIGHTS) { const d = document.createElement('div'), px = Math.round(s * w);
+    d.className = 'lt' + (room >= need ? ' on' : '') + (fresh && room === need ? ' new' : '');
+    Object.assign(d.style, { left: x + '%', top: y + '%', width: px + 'px', height: px + 'px', background: `radial-gradient(circle, rgba(${rgb},.55) 0%, rgba(${rgb},.18) 35%, rgba(${rgb},0) 70%)` });
+    r.appendChild(d); }
+  $('shelf').innerHTML = TD.ROOM.map(([e, n], i) => i < room ? `<span title="${n}"${fresh && i === room - 1 ? ' class="new"' : ''}>${e}</span>` : '<span class="no">●</span>').join('');
+  $('roomCap').innerHTML = room >= ROOMN ? 'Дом обставлен полностью — все огни горят 🏡' : `🏠 Вещей в доме: <b>${room} из ${ROOMN}</b>. Каждая раскладка добавляет новую.`;
   let g = null; try { g = JSON.parse(ls('tl_game')); } catch (e) {}
-  $('play').textContent = g && g.L === L && g.moves ? `Продолжить · уровень ${L + 1}` : `Играть · уровень ${L + 1}`;
+  $('play').innerHTML = `<span class="tri">▶</span>${g && g.L === L && g.moves ? 'Продолжить' : 'Играть'} · уровень ${L + 1}<span class="chev">›</span>`;
   $('home').hidden = false;
 }
 $('play').onclick = () => { audio(); start(); bell(523.25, 0, 1, 0.07); };
 $('homeBtn').onclick = () => home();
 
 // ─── ночь и звук ───
-function night() { const v = ls('tl_night'), h = new Date().getHours(); return v ? v === '1' : (h >= 21 || h < 7); }   // без выбора — ночь с 21 до 7
-function paint() { const n = night(); document.body.classList.toggle('night', n); $('nightBtn').textContent = n ? '☀️ День' : '🌙 Ночь';
-  document.querySelector('meta[name=theme-color]').content = n ? '#1d2033' : '#efe4d4'; $('sndBtn').textContent = soundOn() ? '🔈 Тихо' : '🔇 Без звука'; }
+function night() { return ls('tl_night') !== '0'; }                               // тёмная тема — основная, «День» — светлый вариант
+const tile = (ico, t) => `<span class="ico">${ico}</span>${t}<span class="chev">›</span>`;
+function paint() { const n = night(); document.body.classList.toggle('day', !n); $('nightBtn').innerHTML = n ? tile('☀️', 'День') : tile('🌙', 'Ночь');
+  document.querySelector('meta[name=theme-color]').content = n ? '#0b1122' : '#eef1f8'; $('sndBtn').innerHTML = soundOn() ? tile('🔈', 'Тихо') : tile('🔇', 'Без звука'); }
 $('nightBtn').onclick = () => { ls('tl_night', night() ? '0' : '1'); paint(); };
 $('sndBtn').onclick = () => { audio(); ls('tl_sound', soundOn() ? '0' : '1'); if (out) out.gain.value = soundOn() ? 0.45 : 0; paint(); };
 
