@@ -165,7 +165,7 @@ function where(id) {
   for (let ci = 0; ci < S.cols.length; ci++) { const col = S.cols[ci], i = col.findIndex(x => x.id === id); if (i >= 0) return i >= col.length - TL.run(S, ci) ? ci : null; }
   return null;
 }
-// ─── перетаскивание пальцем: взяла карту (или всю верхнюю стопку) — отпустила над ячейкой или столбцом; без сдвига — обычное нажатие ───
+// ─── перетаскивание пальцем: взяла карту (или всю верхнюю стопку) — отпустила над ячейкой или столбцом; нажатие без сдвига — только колода ───
 let drag = null;
 const slotX = i => geo.X(i + (geo.G - S.slots.length) / 2), colX = i => geo.X(i + (geo.G - S.cols.length) / 2);
 table.addEventListener('pointerdown', e => {
@@ -198,7 +198,7 @@ function dropMove(d, x, y) {                                                    
 }
 function dropEnd(e, cancel) {
   const d = drag; if (!d || e.pointerId !== d.pid) return; drag = null;
-  if (!d.moved) { if (!cancel) tap(d.id); return; }
+  if (!d.moved) { if (!cancel && where(d.id) === 'stock') doDraw(); return; }       // нажатие — только колода; карты двигаются пальцем
   const dx = e.clientX - d.x0, dy = e.clientY - d.y0, el0 = els.get(d.ids[0]);
   const m = cancel ? null : dropMove(d, parseFloat(el0.style.left) + dx + cw / 2, parseFloat(el0.style.top) + dy + ch / 2);
   for (const id of d.ids) { const el = els.get(id);                                  // карта остаётся там, где её отпустили, и оттуда плывёт на место
@@ -208,17 +208,6 @@ function dropEnd(e, cancel) {
 }
 addEventListener('pointerup', e => dropEnd(e, false));
 addEventListener('pointercancel', e => dropEnd(e, true));
-function nope(id) { const el = els.get(id); el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); }
-function tap(id) {
-  if (busy) return;
-  const w = where(id);
-  if (w === 'stock') return doDraw();
-  if (w === null) return nope(id);
-  const ms = TL.moves(S).filter(m => m.from === w);
-  const m = ms.find(m => typeof m.to === 'string') || ms.find(m => S.cols[m.to].length) || ms[0];
-  if (!m) return nope(id);
-  act(m);
-}
 function act(m) {
   hist.push(TL.clone(S)); if (hist.length > 300) hist.shift();
   const r = TL.apply(S, m);
@@ -390,7 +379,7 @@ $('moveGo').onclick = () => { const n = Math.floor(+$('moveIn').value); if (!(n 
   L = n - 1; room = Math.min(ROOMN, L); ls('tl_level', L); ls('tl_room', room); $('moveCard').hidden = true; $('moveBtn').hidden = true; home(); };
 
 paint(); home(); rainShow();
-if (/[?&]debug/.test(location.search)) window.TT = { S: () => S, tap, act, best: () => TL.best(S) };      // для проверок: ?debug
+if (/[?&]debug/.test(location.search)) window.TT = { S: () => S, act, draw: doDraw, best: () => TL.best(S) };      // для проверок: ?debug
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const had = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('sw.js').then(reg => document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); })).catch(() => {});
